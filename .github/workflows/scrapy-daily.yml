@@ -1,0 +1,49 @@
+name: Daily Scrapy Crawl
+
+on:
+  schedule:
+    - cron: '0 3 * * *'  # Every day at 03:00 UTC
+  workflow_dispatch:
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install scrapy
+
+      - name: Run hp_printables spider
+        run: |
+          mkdir -p data
+          scrapy crawl hp_printables -o data/hp_printables.json
+
+      - name: Run hp_learning spider
+        run: |
+          scrapy crawl hp_learning -o data/hp_learning.json
+
+      - name: Commit and push data
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/*.json
+          timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          git commit -m "Update scraped data ($timestamp)" || echo "No changes to commit"
+          git push
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: scraped-json
+          path: |
+            data/hp_printables.json
+            data/hp_learning.json
