@@ -1,4 +1,4 @@
-name: Daily Scrapy Crawl
+name: Weekly HP Printables Scrapy Crawl
 
 on:
   schedule:
